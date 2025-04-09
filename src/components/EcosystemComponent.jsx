@@ -4,7 +4,7 @@ import rock from "../assets/rock.png";
 const EcosystemComponent = ({ theme }) => {
   return (
     <div
-      className={`py-16 px-8 md:px-10 mx-auto flex flex-col md:flex-row items-center justify-between w-4/5`}
+      className={`py-16 px-8 md:px-10 mx-auto flex flex-col md:flex-row gap-5 items-center justify-between w-4/5`}
     >
       <div className="md:w-1/2">
         <p
