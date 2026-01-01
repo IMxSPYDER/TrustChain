@@ -8,7 +8,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const contractAddress = "0x6f2eEf81Db6955FDb6e8DFfA741e33924190b3cD";
+  const contractAddress = "0x5420bEE9c824253D2b12ae95f26E79197D2c1Df1";
 
   // Auto-fetch wallet address
   useEffect(() => {

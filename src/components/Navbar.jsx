@@ -24,7 +24,7 @@ const Navbar = ({ account, connectWallet, disconnectWallet,theme,toggleTheme }) 
             className="rounded-[50%] h-[20px] w-[19px]"
           />
           <span className={`font-bold  ${theme === "dark" ? " text-white" : " text-black"} `}>
-            Tru<span className="!text-blue-500">Chain</span>
+            Trust<span className="!text-blue-500">Chain</span>
           </span>
         </Link>
 
@@ -90,7 +90,7 @@ const Navbar = ({ account, connectWallet, disconnectWallet,theme,toggleTheme }) 
           <Button text={"Connect Wallet"} click={connectWallet}></Button>
 
         )}
-                <button onClick={toggleTheme} className="ml-4 p-2 rounded-full">
+                <button onClick={toggleTheme} className="ml-4 p-2 rounded-full cursor-pointer">
           {theme === "dark" ? (
             <FaSun className="text-white-500" size={24} />
           ) : (

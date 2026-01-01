@@ -3,31 +3,42 @@ import { ethers } from "ethers"
 import { Check, XCircle } from "lucide-react"
 import contractABI from "../web3/abi.json"
 
-export default function RequestedDocuments({ account, onAccessRevoked }) {
+export default function RequestedDocuments({ account }) {
   const [requests, setRequests] = useState([])
   const [isLoading, setIsLoading] = useState(true)
-  const contractAddress = "0x6f2eEf81Db6955FDb6e8DFfA741e33924190b3cD"
+  const contractAddress = "0x5420bEE9c824253D2b12ae95f26E79197D2c1Df1"
 
   const fetchRequests = async () => {
-    try {
-      const provider = new ethers.BrowserProvider(window.ethereum)
-      const signer = await provider.getSigner()
-      const contract = new ethers.Contract(contractAddress, contractABI, signer)
+  try {
+    if (!window.ethereum) return alert("Connect wallet")
 
-      const data = await contract.getCompleteUserData()
-      const requestData = data[5].map((r, index) => ({
-        id: index,
-        requester: r.requester,
-        credentialHash: r.credentialHash,
-        isApproved: r.isApproved,
-      }))
-      setRequests(requestData)
-    } catch (err) {
-      console.error("Error fetching requests:", err)
-    } finally {
-      setIsLoading(false)
-    }
+    const provider = new ethers.BrowserProvider(window.ethereum)
+    const signer = await provider.getSigner()
+    const userAddress = signer.address
+
+    const contract = new ethers.Contract(
+      contractAddress,
+      contractABI,
+      signer
+    )
+
+    // ✅ FIX: correct contract function
+    const data = await contract.getAccessRequestsByUser(userAddress)
+
+    const requestData = data.map((r, index) => ({
+      id: index,
+      requester: r.requester,
+      credentialHash: r.credentialHash,
+      isApproved: r.isApproved,
+    }))
+
+    setRequests(requestData)
+  } catch (err) {
+    console.error("Error fetching requests:", err)
+  } finally {
+    setIsLoading(false)
   }
+}
 
   const grantAccess = async (request) => {
     try {
@@ -35,7 +46,6 @@ export default function RequestedDocuments({ account, onAccessRevoked }) {
       const signer = await provider.getSigner()
       const contract = new ethers.Contract(contractAddress, contractABI, signer)
 
-      // ZKP verification placeholder (pass actual proof later)
       const zkpVerified = true
 
       const tx = await contract.grantAccess(
@@ -62,18 +72,8 @@ export default function RequestedDocuments({ account, onAccessRevoked }) {
         request.credentialHash
       )
       await tx.wait()
-
-      // Update the local state to reflect that access has been revoked
-      setRequests((prevRequests) =>
-        prevRequests.map((req) =>
-          req.id === request.id ? { ...req, isApproved: false } : req
-        )
-      )
-
-      // Trigger the parent callback to notify about revoked access
-      onAccessRevoked(request.credentialHash, false);
-
       alert("Access Revoked")
+      fetchRequests()
     } catch (err) {
       console.error("Revoke Access Error:", err)
     }
@@ -107,22 +107,27 @@ export default function RequestedDocuments({ account, onAccessRevoked }) {
               </div>
               <div className="flex items-center gap-3">
                 {request.isApproved ? (
-                  <span className="flex items-center gap-1 text-green-500 text-sm">
-                    <Check className="h-4 w-4" /> Access Granted
-                  </span>
-                ) : (
                   <>
-                    <button
-                      onClick={() => grantAccess(request)}
-                      className="px-3 py-1 text-sm bg-green-600 rounded-md hover:bg-green-700"
-                    >
-                      Grant Access
-                    </button>
+                    <span className="flex items-center gap-1 text-green-500 text-sm">
+                      <Check className="h-4 w-4" /> Access Granted
+                    </span>
                     <button
                       onClick={() => revokeAccess(request)}
                       className="px-3 py-1 text-sm bg-red-600 rounded-md hover:bg-red-700"
                     >
                       Revoke Access
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className="flex items-center gap-1 text-red-500 text-sm">
+                      <XCircle className="h-4 w-4" /> Access Not Granted
+                    </span>
+                    <button
+                      onClick={() => grantAccess(request)}
+                      className="px-3 py-1 text-sm bg-green-600 rounded-md hover:bg-green-700"
+                    >
+                      Grant Access
                     </button>
                   </>
                 )}

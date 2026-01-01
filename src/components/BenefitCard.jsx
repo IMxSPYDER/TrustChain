@@ -40,7 +40,7 @@ const benefits = [
 
 export default function BenefitCard({ theme }) {
   return (
-    <div className={`${theme === "dark" ? "text-white" : "text-black"} py-16 px-6 text-center`}>
+    <div id='features' className={`${theme === "dark" ? "text-white" : "text-black"} py-16 px-6 text-center`}>
       <small className={`${theme === "dark" ? "text-white" : "text-black"} uppercase text-lg`}>Benefits of TruChain</small>
       <h2 className={`${theme === "dark" ? "text-white" : "text-black"} text-5xl font-bold my-4`}>Unlock Exclusive Opportunities</h2>
       <p className={`${theme === "dark" ? "text-gray-300" : "text-gray-700"} max-w-3xl text-lg mx-auto mb-10`}>

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Eye, MoreHorizontal, X } from "lucide-react";
 import ABI from "../web3/abi.json";
 
-const CONTRACT_ADDRESS = "0x6f2eEf81Db6955FDb6e8DFfA741e33924190b3cD";
+const CONTRACT_ADDRESS = "0x5420bEE9c824253D2b12ae95f26E79197D2c1Df1";
 
 export default function UserCredentialsPage() {
   const [credentials, setCredentials] = useState([]);
@@ -24,25 +24,27 @@ export default function UserCredentialsPage() {
   };
 
   const fetchCredentials = async () => {
-    try {
-      if (!window.ethereum) return alert("Please install MetaMask");
+  try {
+    if (!window.ethereum) return alert("Please install MetaMask");
 
-      setLoading(true);
+    setLoading(true);
 
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const address = signer.address;
-      setWallet(address);
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const address = signer.address;
+    setWallet(address);
 
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-      const data = await contract.getUserCredentials();
-      setCredentials(data);
-    } catch (error) {
-      console.error("Error fetching credentials:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+
+    // ✅ FIX HERE
+    const data = await contract.getMyCredentials();
+    setCredentials(data);
+  } catch (error) {
+    console.error("Error fetching credentials:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const toggleVisibility = (index) => {
     setVisibleIds((prev) => ({

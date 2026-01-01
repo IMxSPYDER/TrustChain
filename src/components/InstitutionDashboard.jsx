@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import DecentralizedIdentityABI from "../web3/abi.json";
 
-const contractAddress = "0x6f2eEf81Db6955FDb6e8DFfA741e33924190b3cD";
+const contractAddress = "0x5420bEE9c824253D2b12ae95f26E79197D2c1Df1";
 
 const InstitutionDashboard = () => {
   const [users, setUsers] = useState([]);
@@ -18,38 +18,53 @@ const InstitutionDashboard = () => {
     fetchUsers();
   }, []);
 
-  const fetchUsers = async () => {
-    try {
-      if (!window.ethereum) return alert("Connect Wallet");
-      setLoading(true);
+const fetchUsers = async () => {
+  try {
+    if (!window.ethereum) return alert("Connect Wallet");
 
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(
-        contractAddress,
-        DecentralizedIdentityABI,
-        signer
-      );
+    setLoading(true);
 
-      const blockNumber = await provider.getBlockNumber();
-      const eventTopic = contract.interface.getEvent("UserRegistered").topicHash;
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const contract = new ethers.Contract(
+      contractAddress,
+      DecentralizedIdentityABI,
+      signer
+    );
+
+    const latestBlock = await provider.getBlockNumber();
+    const event = contract.interface.getEvent("UserRegistered");
+    const topic = event.topicHash;
+
+    const STEP = 1000;
+    const fetchedUsers = [];
+    const seen = new Set();
+
+    const DEPLOYMENT_BLOCK = 37736688; 
+
+    // 🔥 START FROM DEPLOYMENT BLOCK
+    for (let from = DEPLOYMENT_BLOCK; from <= latestBlock; from += STEP) {
+      const to = Math.min(from + STEP, latestBlock);
+
       const logs = await provider.getLogs({
         address: contractAddress,
-        fromBlock: 0,
-        toBlock: blockNumber,
-        topics: [eventTopic],
+        fromBlock: from,
+        toBlock: to,
+        topics: [topic],
       });
-
-      const fetchedUsers = [];
 
       for (const log of logs) {
         const parsed = contract.interface.parseLog(log);
+
+        // ✅ FIXED
         const userAddress = parsed.args[0];
+        if (!userAddress || seen.has(userAddress)) continue;
+
+        seen.add(userAddress);
 
         const data = await contract.getUserDetails(userAddress);
-        const role = data[2]; // role
 
-        if (Number(role) !== 0) continue; // 0 = USER
+        if (Number(data[2]) !== 0) continue; // only USER
 
         fetchedUsers.push({
           address: userAddress,
@@ -57,59 +72,64 @@ const InstitutionDashboard = () => {
           email: data[1],
         });
       }
-      setUsers(fetchedUsers);
-    } catch (err) {
-      console.error("Error fetching users:", err);
-      setError("Failed to load users");
-    } finally {
-      setLoading(false);
     }
-  };
 
-  const openModal = async (user) => {
-    try {
-      if (!window.ethereum) return alert("Connect Wallet");
+    setUsers(fetchedUsers);
+  } catch (err) {
+    console.error("Error fetching users:", err);
+    setError("Failed to load users");
+  } finally {
+    setLoading(false);
+  }
+};
 
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(
-        contractAddress,
-        DecentralizedIdentityABI,
-        signer
-      );
 
-      const [, , , , creds, requests, ageVerified] = await contract.getUserData(user.address);
 
-      // Mark which credential is already requested
-      const requestMap = {};
-      requests.forEach((req) => {
-        if (req.requester === signer.address) {
-          requestMap[req.credentialHash] = req.isApproved;
-        }
-      });
+const openModal = async (user) => {
+  try {
+    if (!window.ethereum) return alert("Connect Wallet");
 
-      setRequested(requestMap);
-      setCredentials(
-        creds.map((cred) => ({
-          name: cred.name,
-          certificateName: cred.certificateName,
-          hash: cred.documentIPFSHash,
-          isVerified: cred.isVerified,
-          isRevoked: cred.isRevoked,
-        }))
-      );
-      
-      // Store if the user has verified that they are 18 or older
-      setSelectedUser({ ...user, ageVerified });
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
 
-      console.log(selectedUser)
+    const contract = new ethers.Contract(
+      contractAddress,
+      DecentralizedIdentityABI,
+      signer
+    );
 
-      setShowModal(true);
-    } catch (err) {
-      console.error("Error loading credentials:", err);
-      alert("Failed to load credentials");
+    // ✅ FIXED FUNCTION NAMES
+    const creds = await contract.getUserCredentialsByAddress(user.address);
+    const requests = await contract.getAccessRequestsByUser(user.address);
+
+    const requestMap = {};
+    for (const req of requests) {
+      if (req.requester.toLowerCase() === signer.address.toLowerCase()) {
+        requestMap[req.credentialHash] = req.isApproved;
+      }
     }
-  };
+
+    setRequested(requestMap);
+
+    setCredentials(
+      creds.map((cred) => ({
+        name: cred.name,
+        certificateName: cred.certificateName,
+        hash: cred.documentIPFSHash,
+        isVerified: cred.isVerified,
+        isRevoked: cred.isRevoked,
+      }))
+    );
+
+    setSelectedUser(user);
+    setShowModal(true);
+  } catch (err) {
+    console.error("Error loading credentials:", err);
+    alert("Failed to load credentials");
+  }
+};
+
+
 
   const requestDocument = async (hash) => {
     try {

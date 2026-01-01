@@ -152,40 +152,6 @@
 	{
 		"inputs": [
 			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "accessRequests",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "requester",
-				"type": "address"
-			},
-			{
-				"internalType": "string",
-				"name": "credentialHash",
-				"type": "string"
-			},
-			{
-				"internalType": "bool",
-				"name": "isApproved",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
 				"internalType": "string",
 				"name": "name",
 				"type": "string"
@@ -222,8 +188,14 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "getAccessRequests",
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			}
+		],
+		"name": "getAccessRequestsByUser",
 		"outputs": [
 			{
 				"components": [
@@ -253,104 +225,7 @@
 	},
 	{
 		"inputs": [],
-		"name": "getCompleteUserData",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			},
-			{
-				"internalType": "uint8",
-				"name": "",
-				"type": "uint8"
-			},
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			},
-			{
-				"components": [
-					{
-						"internalType": "string",
-						"name": "name",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "certificateId",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "dob",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "certificateName",
-						"type": "string"
-					},
-					{
-						"internalType": "uint256",
-						"name": "age",
-						"type": "uint256"
-					},
-					{
-						"internalType": "string",
-						"name": "documentIPFSHash",
-						"type": "string"
-					},
-					{
-						"internalType": "bool",
-						"name": "isVerified",
-						"type": "bool"
-					},
-					{
-						"internalType": "bool",
-						"name": "isRevoked",
-						"type": "bool"
-					}
-				],
-				"internalType": "struct DecentralizedIdentity.Credential[]",
-				"name": "",
-				"type": "tuple[]"
-			},
-			{
-				"components": [
-					{
-						"internalType": "address",
-						"name": "requester",
-						"type": "address"
-					},
-					{
-						"internalType": "string",
-						"name": "credentialHash",
-						"type": "string"
-					},
-					{
-						"internalType": "bool",
-						"name": "isApproved",
-						"type": "bool"
-					}
-				],
-				"internalType": "struct DecentralizedIdentity.AccessRequest[]",
-				"name": "",
-				"type": "tuple[]"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "getUserCredentials",
+		"name": "getMyCredentials",
 		"outputs": [
 			{
 				"components": [
@@ -411,28 +286,8 @@
 				"type": "address"
 			}
 		],
-		"name": "getUserData",
+		"name": "getUserCredentialsByAddress",
 		"outputs": [
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			},
-			{
-				"internalType": "uint8",
-				"name": "",
-				"type": "uint8"
-			},
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			},
 			{
 				"components": [
 					{
@@ -477,28 +332,6 @@
 					}
 				],
 				"internalType": "struct DecentralizedIdentity.Credential[]",
-				"name": "",
-				"type": "tuple[]"
-			},
-			{
-				"components": [
-					{
-						"internalType": "address",
-						"name": "requester",
-						"type": "address"
-					},
-					{
-						"internalType": "string",
-						"name": "credentialHash",
-						"type": "string"
-					},
-					{
-						"internalType": "bool",
-						"name": "isApproved",
-						"type": "bool"
-					}
-				],
-				"internalType": "struct DecentralizedIdentity.AccessRequest[]",
 				"name": "",
 				"type": "tuple[]"
 			}
@@ -652,65 +485,6 @@
 		"name": "revokeAccess",
 		"outputs": [],
 		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "userCredentials",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "name",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "certificateId",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "dob",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "certificateName",
-				"type": "string"
-			},
-			{
-				"internalType": "uint256",
-				"name": "age",
-				"type": "uint256"
-			},
-			{
-				"internalType": "string",
-				"name": "documentIPFSHash",
-				"type": "string"
-			},
-			{
-				"internalType": "bool",
-				"name": "isVerified",
-				"type": "bool"
-			},
-			{
-				"internalType": "bool",
-				"name": "isRevoked",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
 		"type": "function"
 	},
 	{

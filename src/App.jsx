@@ -27,7 +27,7 @@ const App = () => {
   const [isRegistered, setIsRegistered] = useState(false);
 
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light"); 
-  const contractAddress = '0x6f2eEf81Db6955FDb6e8DFfA741e33924190b3cD'; // Replace with actual contract address
+  const contractAddress = '0x5420bEE9c824253D2b12ae95f26E79197D2c1Df1'; // Replace with actual contract address
 
 
   const connectWallet = async () => {

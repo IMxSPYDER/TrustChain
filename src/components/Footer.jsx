@@ -13,23 +13,23 @@ export default function Footer() {
           <Link to="/" className="flex items-center gap-2">
             <img src={logo} alt="0xETHDao Logo" width={35} height={40} />
             <span className={`font-bold text-3xl ${theme === "dark" ? "text-white" : "text-black"}`}>
-              Tru<span className={`text-blue-500 ${theme === "dark" ? "text-blue-300" : "text-blue-500"}`}>Chain</span>
+              Trust<span className={`text-blue-500 ${theme === "dark" ? "text-blue-300" : "text-blue-500"}`}>Chain</span>
             </span>
           </Link>
           <nav className="flex items-center gap-6">
-            <Link to="#" className="text-sm text-gray-600 hover:text-white transition-colors">
+            <Link to="#" className="text-sm text-white transition-colors">
               About
             </Link>
-            <Link to="#" className="text-sm text-gray-600 hover:text-white transition-colors">
+            <Link to="#" className="text-sm text-white transition-colors">
               Membership
             </Link>
-            <Link to="#" className="text-sm text-gray-600 hover:text-white transition-colors">
+            <Link to="#" className="text-sm text-white transition-colors">
               Team
             </Link>
-            <Link to="#" className="text-sm text-gray-600 hover:text-white transition-colors">
+            <Link to="#" className="text-sm text-white transition-colors">
               Products
             </Link>
-            <Link to="#" className="text-sm text-gray-600 hover:text-white transition-colors">
+            <Link to="#" className="text-sm text-white transition-colors">
               Partners
             </Link>
           </nav>
@@ -54,7 +54,7 @@ export default function Footer() {
             </Link>
           </div>
         </div>
-        <div className="text-center text-xs text-gray-500 mt-8">© 2023 0xETHDao All Rights Reserved.</div>
+        <div className="text-center text-xs text-gray-500 mt-8">© 2025 All Rights Reserved.</div>
       </div>
     </div>
   );
