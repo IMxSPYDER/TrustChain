@@ -1,7 +1,7 @@
 # TrustChain - Decentralized Identity Verification for Secure Access
 
 ## Overview
-TruChain is a decentralized digital identity platform leveraging Self-Sovereign Identity (SSI) and Zero-Knowledge Proofs (ZKP). It enables users to securely register, create wallets, and generate verifiable tokens. Institutions and organizations can request access to user credentials for verification, and users have full control to grant, reject, or revoke access at any time, ensuring privacy protection. To enhance the user experience, TruChain integrates a Gemini-powered chatbot that guides users through the platform.
+TrustChain is a decentralized digital identity platform leveraging Self-Sovereign Identity (SSI) and Zero-Knowledge Proofs (ZKP). It enables users to securely register, create wallets, and generate verifiable tokens. Institutions and organizations can request access to user credentials for verification, and users have full control to grant, reject, or revoke access at any time, ensuring privacy protection. To enhance the user experience, TruChain integrates a Gemini-powered chatbot that guides users through the platform.
 
 ## Features
 - **Decentralized Identity**: Users can create and manage their digital identities in a trustless environment.
