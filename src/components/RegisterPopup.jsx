@@ -4,10 +4,15 @@ import { ethers } from "ethers";
 import { FaUserShield, FaUniversity } from "react-icons/fa";
 import contractABI from "../web3/abi.json";
 
+
+
 const RegisterPopup = ({ account, contractAddress }) => {
   const [role, setRole] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [guardian1, setGuardian1] = useState("");
+  const [guardian2, setGuardian2] = useState("");
+  const [guardian3, setGuardian3] = useState("");
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const navigate = useNavigate();
@@ -17,49 +22,13 @@ const RegisterPopup = ({ account, contractAddress }) => {
     setShowForm(true);
   };
 
-  // const handleRegister = async (e) => {
-  //   e.preventDefault();
-  //   if (!role || !name || !email) {
-  //     alert("Please fill all fields.");
-  //     return;
-  //   }
 
-  //   const roleMapping = {
-  //     user: 0,
-  //     university: 1,
-  //   };
+  const SALT = "STATIC_SALT";
 
-  //   try {
-  //     setLoading(true);
-  //     const provider = new ethers.BrowserProvider(window.ethereum);
-  //     const signer = await provider.getSigner();
-  //     const contract = new ethers.Contract(contractAddress, contractABI, signer);
-
-  //     const isRegistered = await contract.isUserRegistered(account);
-  //     if (isRegistered) {
-  //       alert("You are already registered! Redirecting to login...");
-  //       navigate("/login");
-  //       return;
-  //     }
-
-  //     const tx = await contract.registerUser(name, email, roleMapping[role], { from: account });
-  //     await tx.wait();
-
-  //     alert("Registration successful!");
-
-  //     if (role === "user") {
-  //       navigate("/user-dashboard", { state: { account, contractAddress, name } });
-  //     } else if (role === "university") {
-  //       navigate("/university-dashboard");
-  //     }
-
-  //   } catch (error) {
-  //     console.error("Error registering:", error);
-  //     alert("Registration failed. Please try again.");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  const hashGuardian = (email) =>
+  ethers.keccak256(
+    ethers.toUtf8Bytes(email.toLowerCase() + SALT)
+  );
 
   const handleRegister = async (e) => {
   e.preventDefault();
@@ -96,6 +65,24 @@ const RegisterPopup = ({ account, contractAddress }) => {
       role === "user" ? 0 : 1
     );
     await tx.wait();
+
+    const guardianHashes = [
+    hashGuardian(guardian1),
+    hashGuardian(guardian2),
+    hashGuardian(guardian3),
+    ];
+
+    const tx2 = await contract.registerGuardians(guardianHashes);
+    await tx2.wait();
+
+    await fetch("http://localhost:5000/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      wallet: signerAddress,
+      guardians: [guardian1, guardian2, guardian3]
+      })
+    });
 
     alert("Registration successful");
 
@@ -173,6 +160,27 @@ const RegisterPopup = ({ account, contractAddress }) => {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full p-3 bg-[#2a2a40] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
               />
+              <input
+                type="email"
+                placeholder="Guardian Email 1"
+                onChange={(e) => setGuardian1(e.target.value)}
+                className="w-full p-3 mt-2"
+              />
+
+              <input
+                type="email"
+                placeholder="Guardian Email 2"
+                onChange={(e) => setGuardian2(e.target.value)}
+                className="w-full p-3 mt-2" 
+              />
+
+              <input
+                type="email"
+                placeholder="Guardian Email 3"
+                onChange={(e) => setGuardian3(e.target.value)}
+                className="w-full p-3 mt-2"
+              />
+
               <div className="flex justify-between">
                 <button
                   type="button"

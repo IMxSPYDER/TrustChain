@@ -6,7 +6,7 @@ import axios from "axios"
 import CONTRACT_ABI from "../web3/abi.json"
 import { generateNonce, generateCommitment,  generateResponse } from "../utils/zkUtils.js";
 
-const CONTRACT_ADDRESS = "0x5420bEE9c824253D2b12ae95f26E79197D2c1Df1"
+const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
 
 // ❗️ In production, move these API keys to server-side functions
 const PINATA_API_KEY = "c12515a4241830355897"
@@ -104,7 +104,17 @@ export default function AddCredentialModal({ isOpen, onClose, onSuccess }) {
 
       // submit commitment to smart contract
       const commitment = generateCommitment(ipfsHash, nonce);
-      await contract.submitCommitment(commitment);
+      // await contract.submitCommitment(commitment);
+      
+      await contract.addCredential(
+        name,
+        certificateId,
+        dob,
+        certificateName,
+        age,
+        documentIPFSHash
+      );
+
 
       // get challenge from contract
       const challenge = await contract.getChallenge(await signer.getAddress());

@@ -6,7 +6,7 @@ import ABI from "../web3/abi.json";
 
 
 
-const CONTRACT_ADDRESS = "0x5420bEE9c824253D2b12ae95f26E79197D2c1Df1";
+const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
 
 export default function UserCredentialsPage() {
   const [credentials, setCredentials] = useState([]);

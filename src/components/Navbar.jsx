@@ -90,13 +90,19 @@ const Navbar = ({ account, connectWallet, disconnectWallet,theme,toggleTheme }) 
           <Button text={"Connect Wallet"} click={connectWallet}></Button>
 
         )}
-                <button onClick={toggleTheme} className="ml-4 p-2 rounded-full cursor-pointer">
+          <button onClick={toggleTheme} className="ml-4 p-2 rounded-full cursor-pointer">
           {theme === "dark" ? (
             <FaSun className="text-white-500" size={24} />
           ) : (
             <FaMoon className="text-blue-500" size={24} />
           )}
         </button>
+
+        {!account && (
+        <button onClick={() => window.location.href = "/recover"}
+         className="text-sm text-blue-400 underline ml-4"
+        > Recover Account </button>
+        )}
 
       </div>
       

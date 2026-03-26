@@ -22,12 +22,14 @@ import Chatbot from './components/chatbot/Chatbot';
 import GlowingBackground from "./components/GlowingBackground";
 import EcosystemComponent from "./components/EcosystemComponent";
 import { ThemeContext } from "./Context/ThemeContext";
+import RecoverAccount from "./components/RecoverAccount";
+
 const App = () => {
   const [account, setAccount] = useState(null);
   const [isRegistered, setIsRegistered] = useState(false);
 
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light"); 
-  const contractAddress = '0x5420bEE9c824253D2b12ae95f26E79197D2c1Df1'; // Replace with actual contract address
+  const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS; // Replace with actual contract address
 
 
   const connectWallet = async () => {

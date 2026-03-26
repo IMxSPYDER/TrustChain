@@ -5,13 +5,12 @@ export function generateNonce() {
   return Math.floor(Math.random() * 1e16).toString();
 }
 
-// commitment = hash(ipfsHash + nonce)
+// commitment = keccak256(ipfsHash + nonce)
 export function generateCommitment(ipfsHash, nonce) {
-  return hashMessage(toUtf8Bytes(ipfsHash + nonce));
+  return keccak256(toUtf8Bytes(ipfsHash + nonce));
 }
 
-// response = hash(challenge + nonce)
+// response = keccak256(challenge + nonce)
 export function generateResponse(challenge, nonce) {
-  return hashMessage(toUtf8Bytes(challenge + nonce));
+  return keccak256(toUtf8Bytes(challenge + nonce));
 }
-z

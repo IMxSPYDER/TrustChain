@@ -11,7 +11,7 @@ import UserCredentialsPage from "./UserCredentialsPage"
 import RequestedDocuments from "./RequestedDocuments"
 import logo from '../assets/top.png'
 import { useNavigate } from "react-router-dom"
-z
+
 
 export default function UserDashboard({ account }) {
   const { state } = useLocation()
@@ -21,14 +21,36 @@ export default function UserDashboard({ account }) {
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("credentials")
   const [activeBigTab, setActiveBigTab] = useState("identity")
-    const [loading, setLoading] = useState(false);
-    const [wallet, setWallet] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [wallet, setWallet] = useState("");
+  const [recoveryStatus, setRecoveryStatus] = useState(null);
+  const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
+
+    const checkRecoveryStatus = async () => {
+      try {
+        if (!window.ethereum) return;
+
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const address = await signer.getAddress();
+
+        const contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+        const recovery = await contract.recoveryRequests(address);
+
+        setRecoveryStatus({
+          approvals: Number(recovery.approvals),
+          executed: recovery.executed
+        });
+
+      } catch (err) {
+        console.error("Error fetching recovery status:", err);
+      }
+    };
 
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const navigate = useNavigate()
-
-  const contractAddress = "0x5420bEE9c824253D2b12ae95f26E79197D2c1Df1"
 
   const handleModalOpen = () => setIsModalOpen(true)
   const handleModalClose = () => setIsModalOpen(false)
@@ -108,7 +130,8 @@ export default function UserDashboard({ account }) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        await refreshUserData()
+        await refreshUserData();
+        await checkRecoveryStatus(); 
       } catch (error) {
         console.error("Error fetching data:", error)
       } finally {
@@ -140,31 +163,39 @@ export default function UserDashboard({ account }) {
           <img src={logo} className="h-5 w-5"/>
           <span>TruChain</span>
         </div>
+        
         <nav className="mt-3 flex flex-col gap-1 p-3">
-          <button onClick={() => {setActiveBigTab("identity")}} to="/user-dashboard">
-            <button className="flex w-full items-center gap-2 rounded-md p-2 text-left hover:bg-blue-600 cursor-pointer">
+          <button
+              onClick={() => setActiveBigTab("identity")}
+              className="flex w-full items-center gap-2 rounded-md p-2 text-left hover:bg-blue-600 cursor-pointer"
+              >
               <User className="h-4 w-4" />
               Identity
-            </button>
           </button>
-          <button onClick={() => {setActiveBigTab("credentials")}} to="/user-dashboard/credentials">
-            <button className="flex w-full items-center gap-2 rounded-md p-2 text-left hover:bg-blue-600 cursor-pointer">
-              <FileText className="h-4 w-4" />
-              Credentials
-            </button>
+
+          <button
+            onClick={() => setActiveBigTab("credentials")}
+            className="flex w-full items-center gap-2 rounded-md p-2 text-left hover:bg-blue-600 cursor-pointer"
+            >
+            <FileText className="h-4 w-4" />
+            Credentials
           </button>
-          <button onClick={() => {setActiveBigTab("sharing")}} to="/dashboard/sharing">
-            <button className="flex w-full items-center gap-2 rounded-md p-2 text-left hover:bg-blue-600 cursor-pointer">
+
+          <button onClick={() => {setActiveBigTab("sharing")}} 
+              className="flex w-full items-center gap-2 rounded-md p-2 text-left hover:bg-blue-600 cursor-pointer"
+              >
               <Share2 className="h-4 w-4" />
               Sharing
             </button>
-          </button>
-          <button onClick={() => {setActiveBigTab("setting")}} to="/dashboard/settings">
-            <button className="flex w-full items-center gap-2 rounded-md p-2 text-left hover:bg-blue-600 cursor-pointer">
+
+
+          <button onClick={() => {setActiveBigTab("setting")}} 
+              className="flex w-full items-center gap-2 rounded-md p-2 text-left hover:bg-blue-600 cursor-pointer"
+              >
               <Settings className="h-4 w-4" />
               Settings
             </button>
-          </button>
+
         </nav>
         <div className="mt-auto p-3">
           <button
@@ -205,7 +236,28 @@ export default function UserDashboard({ account }) {
                 </div>
               </div>
             </section>
-  
+            {recoveryStatus && (
+              <div className="mt-6 rounded-xl bg-white/5 backdrop-blur-xs p-4 shadow-sm">
+                <h3 className="text-lg font-semibold">Account Recovery Status</h3>
+
+                <p className="text-sm text-gray-400 mt-2">
+                  Guardian Approvals: {recoveryStatus.approvals}
+                </p>
+
+                <p className="mt-2">
+                  Status:{" "}
+                  {recoveryStatus.executed ? (
+                    <span className="text-green-400 font-semibold">
+                       Recovery Completed
+                    </span>
+                  ) : (
+                    <span className="text-yellow-400 font-semibold">
+                      ⏳ Waiting for Guardian Approvals
+                    </span>
+                  )}
+                </p>
+              </div>
+            )}
             {/* Tabs */}
             <div className="mb-4 pb-2 flex gap-4 border-b border-b-gray-700">
               <button

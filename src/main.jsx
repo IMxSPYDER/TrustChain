@@ -8,6 +8,8 @@ import UserDashboard from './components/UserDashboard.jsx';
 import UserCredentialsPage from './components/UserCredentialsPage.jsx';
 import InstitutionDashboard from './components/InstitutionDashboard.jsx';
 import LoginPage from './components/LoginPage.jsx';
+import RecoverAccount from "./components/RecoverAccount.jsx";
+
 
 createRoot(document.getElementById('root')).render(
 
@@ -20,6 +22,8 @@ createRoot(document.getElementById('root')).render(
     <Route path='/user-dashboard/credentials' element={<UserCredentialsPage/>} />
     <Route path="/university-dashboard" element={<InstitutionDashboard />} />
     <Route path="/login" element={<LoginPage/>}/>
+    <Route path="/recover" element={<RecoverAccount />} />
+
     
 
   </Routes>

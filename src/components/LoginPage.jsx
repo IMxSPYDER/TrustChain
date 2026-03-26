@@ -8,7 +8,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const contractAddress = "0x5420bEE9c824253D2b12ae95f26E79197D2c1Df1";
+  const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
 
   // Auto-fetch wallet address
   useEffect(() => {
@@ -27,46 +27,44 @@ const LoginPage = () => {
     fetchAccount();
   }, []);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    if (!account) {
-      alert("Please connect your wallet.");
-      return;
-    }
+      const handleLogin = async (e) => {
+      e.preventDefault();
 
-    try {
-      setLoading(true);
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(contractAddress, contractABI, signer);
+      try {
+        setLoading(true);
 
-      const isRegistered = await contract.isUserRegistered(account);
-      if (!isRegistered) {
-        alert("No account found! Please register first.");
-        navigate("/"); // Redirect to registration
-        return;
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+        const [
+          userAddress,
+          role,
+          isRegistered,
+          name,
+          email
+        ] = await contract.getUserDetails(account);
+
+        if (!isRegistered) {
+          alert("No account found! Please register.");
+          navigate("/");
+          return;
+        }
+
+        if (Number(role) === 0) {
+          navigate("/user-dashboard", {state: { account: userAddress, name }});
+        } else {
+          navigate("/user-dashboard", {state: { account: userAddress, name }});
+        }
+
+      } catch (err) {
+        console.error("Login error:", err);
+        alert("Login failed");
+      } finally {
+        setLoading(false);
       }
+    };
 
-      // Get user details
-      const [name, email, roleBigInt] = await contract.getUserDetails(account);
-      const role = Number(roleBigInt);
-
-      // Redirect based on role
-      if (role === 0) {
-        navigate("/user-dashboard", { state: { account, contractAddress, name } });
-      } else if (role === 1) {
-        navigate("/university-dashboard", { state: { account, contractAddress, name } });
-      } else {
-        alert("Unknown role detected.");
-      }
-
-    } catch (error) {
-      console.error("Login error:", error);
-      alert("Login failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-900">

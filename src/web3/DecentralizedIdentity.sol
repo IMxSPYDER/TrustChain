@@ -3,6 +3,10 @@ pragma solidity ^0.8.19;
 
 contract DecentralizedIdentity {
 
+    /* -------------------------------------------------- */
+    /*                     TYPES                          */
+    /* -------------------------------------------------- */
+
     enum Role { USER, INSTITUTION }
 
     struct User {
@@ -30,11 +34,34 @@ contract DecentralizedIdentity {
         bool isApproved;
     }
 
-    mapping(address => User) public users;
+    struct RecoveryRequest {
+        address newWallet;
+        uint256 approvals;
+        uint256 startTime;
+        bool executed;
+    }
 
-    // keep mappings private – access via functions only
+    /* -------------------------------------------------- */
+    /*                     STORAGE                        */
+    /* -------------------------------------------------- */
+
+    mapping(address => User) public users;
+    mapping(address => bytes32) public commitments;
+
     mapping(address => Credential[]) private userCredentials;
     mapping(address => AccessRequest[]) private accessRequests;
+
+    // 🔐 Guardians & Recovery
+    mapping(address => bytes32[]) public guardianHashes; // user => guardian hashes
+    mapping(address => RecoveryRequest) public recoveryRequests;
+    mapping(address => mapping(bytes32 => bool)) public guardianApproved;
+
+    uint256 public constant RECOVERY_DELAY = 1 minutes;
+    uint256 public constant REQUIRED_APPROVALS = 2;
+
+    /* -------------------------------------------------- */
+    /*                     EVENTS                         */
+    /* -------------------------------------------------- */
 
     event UserRegistered(address indexed user, string name, string email, Role role);
     event CredentialAdded(address indexed user, string credentialHash);
@@ -42,6 +69,14 @@ contract DecentralizedIdentity {
     event AccessGranted(address indexed user, address requester, string credentialHash);
     event AccessRevoked(address indexed user, address requester, string credentialHash);
     event CredentialVerified(address indexed user, address verifier, string credentialHash);
+
+    event RecoveryStarted(address indexed oldWallet, address indexed newWallet);
+    event RecoveryApproved(address indexed oldWallet, bytes32 guardianHash);
+    event RecoveryExecuted(address indexed oldWallet, address indexed newWallet);
+
+    /* -------------------------------------------------- */
+    /*                     MODIFIERS                      */
+    /* -------------------------------------------------- */
 
     modifier onlyRegistered() {
         require(users[msg.sender].isRegistered, "User not registered");
@@ -57,18 +92,38 @@ contract DecentralizedIdentity {
         _;
     }
 
+    function getUserDetails(address user)
+    external
+    view
+    returns (
+        address userAddress,
+        uint8 role,
+        bool isRegistered,
+        string memory name,
+        string memory email
+    )  
+{
+    User memory u = users[user];
+    return (
+        u.userAddress,
+        uint8(u.role),
+        u.isRegistered,
+        u.name,
+        u.email
+    );
+}
+
+
     /* -------------------------------------------------- */
-    /*                     USER SETUP                     */
+    /*                  USER REGISTRATION                 */
     /* -------------------------------------------------- */
 
     function registerUser(
         string memory _name,
         string memory _email,
         uint8 _role
-    ) public {
+    ) external {
         require(!users[msg.sender].isRegistered, "Already registered");
-        require(bytes(_name).length > 0, "Name empty");
-        require(bytes(_email).length > 0, "Email empty");
         require(_role <= uint8(Role.INSTITUTION), "Invalid role");
 
         users[msg.sender] = User({
@@ -82,26 +137,87 @@ contract DecentralizedIdentity {
         emit UserRegistered(msg.sender, _name, _email, Role(_role));
     }
 
-    function isUserRegistered(address _user) public view returns (bool) {
-        return users[_user].isRegistered;
-    }
-
-    function getUserRole() public view onlyRegistered returns (uint8) {
-        return uint8(users[msg.sender].role);
-    }
-
-    function getUserDetails(address _user)
-        public
-        view
-        returns (string memory, string memory, uint8, bool)
-    {
-        require(users[_user].isRegistered, "User not registered");
-        User memory u = users[_user];
-        return (u.name, u.email, uint8(u.role), u.isRegistered);
+    function isUserRegistered(address user) public view returns (bool) {
+        return users[user].isRegistered;
     }
 
     /* -------------------------------------------------- */
-    /*                  CREDENTIALS                      */
+    /*                    GUARDIANS                       */
+    /* -------------------------------------------------- */
+
+    function registerGuardians(bytes32[] calldata _guardianHashes)
+        external
+        onlyRegistered
+    {
+        require(guardianHashes[msg.sender].length == 0, "Guardians already set");
+        require(_guardianHashes.length >= REQUIRED_APPROVALS, "Not enough guardians");
+
+        guardianHashes[msg.sender] = _guardianHashes;
+    }
+
+    /* -------------------------------------------------- */
+    /*                  SOCIAL RECOVERY                   */
+    /* -------------------------------------------------- */
+
+    function startRecovery(address newWallet) external onlyRegistered {
+        require(!users[newWallet].isRegistered, "New wallet already registered");
+        require(guardianHashes[msg.sender].length > 0, "No guardians set");
+
+        recoveryRequests[msg.sender] = RecoveryRequest({
+            newWallet: newWallet,
+            approvals: 0,
+            startTime: block.timestamp,
+            executed: false
+        });
+
+        emit RecoveryStarted(msg.sender, newWallet);
+    }
+
+    function approveRecovery(address oldWallet, bytes32 guardianHash) external {
+        RecoveryRequest storage req = recoveryRequests[oldWallet];
+        require(req.startTime != 0, "No recovery request");
+        require(!req.executed, "Already executed");
+        require(!guardianApproved[oldWallet][guardianHash], "Already approved");
+
+        bool validGuardian = false;
+        bytes32[] memory g = guardianHashes[oldWallet];
+
+        for (uint i = 0; i < g.length; i++) {
+            if (g[i] == guardianHash) {
+                validGuardian = true;
+                break;
+            }
+        }
+
+        require(validGuardian, "Not a guardian");
+
+        guardianApproved[oldWallet][guardianHash] = true;
+        req.approvals += 1;
+
+        emit RecoveryApproved(oldWallet, guardianHash);
+    }
+
+    function executeRecovery(address oldWallet) external {
+        RecoveryRequest storage req = recoveryRequests[oldWallet];
+
+        require(req.startTime != 0, "No recovery request");
+        require(!req.executed, "Already executed");
+        require(req.approvals >= REQUIRED_APPROVALS, "Not enough approvals");
+        require(block.timestamp >= req.startTime + RECOVERY_DELAY, "Cooldown active");
+
+        address newWallet = req.newWallet;
+
+        users[newWallet] = users[oldWallet];
+        users[newWallet].userAddress = newWallet;
+
+        delete users[oldWallet];
+        req.executed = true;
+
+        emit RecoveryExecuted(oldWallet, newWallet);
+    }
+
+    /* -------------------------------------------------- */
+    /*                  CREDENTIALS                       */
     /* -------------------------------------------------- */
 
     function addCredential(
@@ -111,26 +227,25 @@ contract DecentralizedIdentity {
         string memory certificateName,
         uint256 age,
         string memory documentIPFSHash
-    ) public onlyRegistered {
+    ) external onlyRegistered {
         userCredentials[msg.sender].push(
-            Credential({
-                name: name,
-                certificateId: certificateId,
-                dob: dob,
-                certificateName: certificateName,
-                age: age,
-                documentIPFSHash: documentIPFSHash,
-                isVerified: false,
-                isRevoked: false
-            })
+            Credential(
+                name,
+                certificateId,
+                dob,
+                certificateName,
+                age,
+                documentIPFSHash,
+                false,
+                false
+            )
         );
 
         emit CredentialAdded(msg.sender, documentIPFSHash);
     }
 
-    // ✅ FOR USER DASHBOARD
     function getMyCredentials()
-        public
+        external
         view
         onlyRegistered
         returns (Credential[] memory)
@@ -138,30 +253,25 @@ contract DecentralizedIdentity {
         return userCredentials[msg.sender];
     }
 
-    // ✅ FOR INSTITUTION DASHBOARD
-    function getUserCredentialsByAddress(address _user)
-        public
+    function getUserCredentialsByAddress(address user)
+        external
         view
         returns (Credential[] memory)
     {
-        require(users[_user].isRegistered, "User not registered");
-        return userCredentials[_user];
+        require(users[user].isRegistered, "User not registered");
+        return userCredentials[user];
     }
 
     /* -------------------------------------------------- */
-    /*               ACCESS REQUESTS                     */
+    /*                ACCESS CONTROL                      */
     /* -------------------------------------------------- */
 
-    function requestCredential(
-        address user,
-        string memory credentialHash
-    ) public onlyInstitution {
+    function requestCredential(address user, string memory credentialHash)
+        external
+        onlyInstitution
+    {
         accessRequests[user].push(
-            AccessRequest({
-                requester: msg.sender,
-                credentialHash: credentialHash,
-                isApproved: false
-            })
+            AccessRequest(msg.sender, credentialHash, false)
         );
 
         emit CredentialRequested(user, msg.sender, credentialHash);
@@ -171,12 +281,12 @@ contract DecentralizedIdentity {
         address requester,
         string memory credentialHash,
         bool zkVerification
-    ) public onlyRegistered {
+    ) external onlyRegistered {
         require(zkVerification, "ZKP failed");
 
         AccessRequest[] storage reqs = accessRequests[msg.sender];
 
-        for (uint256 i = 0; i < reqs.length; i++) {
+        for (uint i = 0; i < reqs.length; i++) {
             if (
                 reqs[i].requester == requester &&
                 keccak256(bytes(reqs[i].credentialHash)) ==
@@ -191,13 +301,13 @@ contract DecentralizedIdentity {
         revert("Request not found");
     }
 
-    function revokeAccess(
-        address requester,
-        string memory credentialHash
-    ) public onlyRegistered {
+    function revokeAccess(address requester, string memory credentialHash)
+        external
+        onlyRegistered
+    {
         AccessRequest[] storage reqs = accessRequests[msg.sender];
 
-        for (uint256 i = 0; i < reqs.length; i++) {
+        for (uint i = 0; i < reqs.length; i++) {
             if (
                 reqs[i].requester == requester &&
                 keccak256(bytes(reqs[i].credentialHash)) ==
@@ -212,25 +322,17 @@ contract DecentralizedIdentity {
         revert("Request not found");
     }
 
-    function getAccessRequestsByUser(address user)
-        public
-        view
-        returns (AccessRequest[] memory)
+    /* -------------------------------------------------- */
+    /*                 VERIFICATION                       */
+    /* -------------------------------------------------- */
+
+    function verifyCredential(address user, string memory credentialHash)
+        external
+        onlyInstitution
     {
-        return accessRequests[user];
-    }
-
-    /* -------------------------------------------------- */
-    /*                VERIFICATION                       */
-    /* -------------------------------------------------- */
-
-    function verifyCredential(
-        address user,
-        string memory credentialHash
-    ) public onlyInstitution {
         Credential[] storage creds = userCredentials[user];
 
-        for (uint256 i = 0; i < creds.length; i++) {
+        for (uint i = 0; i < creds.length; i++) {
             if (
                 keccak256(bytes(creds[i].documentIPFSHash)) ==
                 keccak256(bytes(credentialHash))
@@ -242,5 +344,13 @@ contract DecentralizedIdentity {
         }
 
         revert("Credential not found");
+    }
+
+    /* -------------------------------------------------- */
+    /*                    ZKP DEMO                        */
+    /* -------------------------------------------------- */
+
+    function submitCommitment(bytes32 commitment) external onlyRegistered {
+        commitments[msg.sender] = commitment;
     }
 }
